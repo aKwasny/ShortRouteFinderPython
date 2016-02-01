@@ -17,38 +17,39 @@ all_users = {}
 app.debug = False
 app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
-
+#init
 @app.route(app_url + '/')
 def index():
     return render_template('ShortRouteFinder.html')
 
-
+#wyrzuca bazę miast
 @app.route(app_url + '/citiesdb', methods=['GET'])
 def giveMeCitiesDB():
     map = json.dumps(CitiesDB.CitiesDB)
     return map
 
-
+#wyrzuca klucze ze słownika z miastami
 @app.route(app_url + '/onlycities', methods=['GET'])
 def giveMeOnlyCities():
     givenCities = json.dumps({'cities': list(CitiesDB.CitiesDB.keys())}).encode('utf8')
     print(givenCities)
     return givenCities
 
-
+#pobieranie, dodawanie, usuwanie miast ze słownika
 @app.route(app_url + '/cities/<city>', methods=['GET', 'PUT', 'DELETE'])
 def cityActions(city):
     if request.method == 'GET':
         if city not in CitiesDB.CitiesDB.keys():
             return '404 city not found\n'
-        giveCity = json.dumps(CitiesDB.CitiesDB[city]).encode('utf8')
-        return giveCity
-    # TODO: finish the PUT function code - not working already; add city do CitiesDB,
+        cityToGive = json.dumps(CitiesDB.CitiesDB[city]).encode('utf8')
+        return cityToGive
+    # TODO: finish the PUT function code - not working already; add ity do CitiesDB,
     if request.method == 'PUT':
         if city in CitiesDB.CitiesDB.keys():
             return 'City already in database.\n'
         Processing.add_city_to_map(city)
         Processing.add_route_to_city()
+        return '200 Ok, city added.\n'
 
     if request.method == 'DELETE':
         if city in CitiesDB.CitiesDB.keys():
@@ -59,7 +60,7 @@ def cityActions(city):
             return "City already not in database.\n"
     return '200 OK, city removed.\n'
 
-
+#znajdowanie najkrótszej drogi - sens całego programu
 @app.route(app_url + '/findShortestRoute/<originCity>_<destinationCity>', methods=['GET', 'PUT', 'DELETE'])
 def findShortestRoute(originCity, destinationCity):
     theRoute = originCity + '_' + destinationCity
@@ -69,7 +70,7 @@ def findShortestRoute(originCity, destinationCity):
         theRoute = json.dumps(CitiesDB.GeneratedRoutes).encode('utf8')
         return theRoute
     if request.method == 'PUT':
-        CitiesDB.GeneratedRoutes[theRoute] = Processing.dijsktra()  # TODO:add graph, origin, destination
+        CitiesDB.GeneratedRoutes[theRoute] = Processing.dijsktra(originCity, destinationCity)
         return '200 OK, route placed into database.\n'
     if request.method == 'DELETE':
         if theRoute in CitiesDB.GeneratedRoutes.keys():
